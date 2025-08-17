@@ -7,13 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Handlers\" />
     <Folder Include="Interfaces\Repositories\" />
-    <Folder Include="Notifications\" />
-    <Folder Include="Exceptions\" />
-    <Folder Include="Validators\" />
-    <Folder Include="UseCases\" />
-    <Folder Include="Services\" />
   </ItemGroup>
 
 </Project>
