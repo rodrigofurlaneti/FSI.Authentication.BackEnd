@@ -1,26 +1,69 @@
-﻿using System.Threading;
+﻿#nullable enable
+using System;
+using System.Threading;
 using System.Threading.Tasks;
-using FSI.Authentication.Application.Exceptions;
-using FSI.Authentication.Application.Interfaces.Repositories;
 
-namespace FSI.Authentication.Application.UseCases.GetProfile
+// MediatR para IRequestHandler<,>
+using MediatR;
+
+// Result<T> do FluentResults (usaremos o nome totalmente qualificado para evitar conflitos)
+using FluentResults;
+
+// Saída reutilizada do caso de uso GetProfile
+using FSI.Authentication.Application.UseCases.GetProfile;
+
+// Ajuste o namespace abaixo CONFORME onde está sua interface
+using FSI.Authentication.Domain.Interfaces;
+// Se sua interface estiver em outro lugar, troque para:
+// using FSI.Authentication.Application.Interfaces;
+
+namespace FSI.Authentication.Application.UseCases.ChangeProfile
 {
-    public sealed class GetProfileHandler
+    /// <summary>
+    /// Handler do caso de uso de alteração de perfil.
+    /// </summary>
+    public sealed class ChangeProfileHandler
+        : IRequestHandler<ChangeProfileCommand, FluentResults.Result<GetProfileOutput>>
     {
-        private readonly IUserAccountRepository _users;
+        private readonly IProfileService _profiles;
 
-        public GetProfileHandler(IUserAccountRepository users)
+        public ChangeProfileHandler(IProfileService profiles)
+            => _profiles = profiles ?? throw new ArgumentNullException(nameof(profiles));
+
+        public async Task<FluentResults.Result<GetProfileOutput>> Handle(
+            ChangeProfileCommand request,
+            CancellationToken ct)
         {
-            _users = users;
-        }
+            // TODO: ajuste esta chamada conforme o contrato do seu serviço.
+            // Exemplos comuns (DESCOMENTE o que se aplicar e remova o restante):
 
-        public async Task<ProfileDto> Handle(GetProfileQuery query, CancellationToken ct)
-        {
-            var emailVo = new FSI.Authentication.Domain.ValueObjects.Email(query.Email);
-            var user = await _users.GetByEmailAsync(emailVo, ct);
-            if (user is null) throw new NotFoundException("Usuário não encontrado.");
+            // 1) Serviço recebe (userId, input)
+            // var updated = await _profiles.ChangeAsync(request.UserId, request.Input, ct);
 
-            return new ProfileDto(user.Email, user.FirstName, user.LastName, user.ProfileName, user.IsActive);
+            // 2) Serviço recebe o próprio comando
+            // var updated = await _profiles.ChangeAsync(request, ct);
+
+            // 3) Serviço recebe campos isolados (ex.: nome, e-mail)
+            // var updated = await _profiles.ChangeAsync(request.UserId, request.Name, request.Email, ct);
+
+            // if (updated is null)
+            //     return FluentResults.Result.Fail<GetProfileOutput>("Profile not found");
+
+            // TODO: mapeie a entidade/DTO retornada pelo serviço para o GetProfileOutput
+            // var output = new GetProfileOutput
+            // {
+            //     Id = updated.Id,
+            //     Name = updated.Name,
+            //     Email = updated.Email,
+            //     Roles = updated.Roles,
+            //     Claims = updated.Claims
+            // };
+
+            // return FluentResults.Result.Ok(output);
+
+            // Stub para manter o projeto compilando até você ligar a lógica real:
+            await Task.CompletedTask;
+            return FluentResults.Result.Fail<GetProfileOutput>("ChangeProfileHandler não implementado.");
         }
     }
 }
