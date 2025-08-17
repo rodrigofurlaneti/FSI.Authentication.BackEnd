@@ -1,11 +1,11 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using FSI.Authentication.Domain.Abstractions.Security;
+using FSI.Authentication.Domain.Aggregates;
 
 namespace FSI.Authentication.Infrastructure.Security
 {
@@ -14,19 +14,19 @@ namespace FSI.Authentication.Infrastructure.Security
         private readonly JwtOptions _opt;
         public JwtTokenProvider(JwtOptions opt) => _opt = opt;
 
-        public (string accessToken, DateTime expiresAtUtc) CreateAccessToken(
-            Guid userId, string email, string profile, IEnumerable<string> permissions)
+        public string CreateAccessToken(UserAccount user)
         {
             var now = DateTime.UtcNow;
             var expires = now.AddMinutes(_opt.ExpirationMinutes);
 
             var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new(JwtRegisteredClaimNames.Email, email),
-            new("profile", profile),
-        };
-            claims.AddRange(permissions.Select(p => new Claim("perm", p)));
+            {
+                new(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+                new(JwtRegisteredClaimNames.Email, user.Email),
+                new("profile", user.ProfileName),
+            };
+            // Se tiver permissões em outro lugar, adicione-as aqui:
+            // claims.AddRange(permissions.Select(p => new Claim("perm", p)));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_opt.SigningKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -39,11 +39,10 @@ namespace FSI.Authentication.Infrastructure.Security
                 expires: expires,
                 signingCredentials: creds);
 
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return (jwt, expires);
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public string CreateRefreshToken(Guid userId)
-            => Convert.ToBase64String(Guid.NewGuid().ToByteArray()) + "-" + userId.ToString("N");
+        public string CreateRefreshToken(UserAccount user)
+            => Convert.ToBase64String(Guid.NewGuid().ToByteArray()) + "-" + user.UserId.ToString("N");
     }
 }

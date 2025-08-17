@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using FSI.Authentication.Domain.Abstractions.Messaging;
 
 namespace FSI.Authentication.Infrastructure.Outbox
 {
@@ -14,7 +12,12 @@ namespace FSI.Authentication.Infrastructure.Outbox
         private readonly IOutbox _outbox;
         public EventPublisher(IOutbox outbox) => _outbox = outbox;
 
+        // Atalho genérico (opcional)
         public Task PublishAsync<T>(T notification, CancellationToken ct) where T : class
-            => _outbox.EnqueueAsync(notification, ct);
+            => PublishAsync((object)notification!, ct);
+
+        // Implementação que satisfaz a interface do Domain
+        public Task PublishAsync(object @event, CancellationToken ct)
+            => _outbox.EnqueueAsync(@event, ct);
     }
 }

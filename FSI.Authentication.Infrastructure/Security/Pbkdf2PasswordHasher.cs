@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using FSI.Authentication.Domain.Abstractions.Security;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace FSI.Authentication.Infrastructure.Security
 {

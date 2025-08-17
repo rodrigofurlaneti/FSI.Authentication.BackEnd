@@ -1,13 +1,13 @@
-﻿using FSI.Authentication.Infrastructure.Outbox;
-using FSI.Authentication.Infrastructure.Persistence;
-using Microsoft.Data.SqlClient;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Data;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
+
+using FSI.Authentication.Domain.Abstractions.Messaging;
+using FSI.Authentication.Infrastructure.Outbox;
+using FSI.Authentication.Infrastructure.Persistence;
 
 namespace FSI.Authentication.Infrastructure
 {
@@ -16,12 +16,18 @@ namespace FSI.Authentication.Infrastructure
         private readonly DbSession _session;
         public SqlOutbox(DbSession session) => _session = session;
 
-        public async Task EnqueueAsync<T>(T message, CancellationToken ct) where T : class
+        public Task EnqueueAsync<T>(T message, CancellationToken ct) where T : class
+            => EnqueueAsync((object)message!, ct);
+
+        public async Task EnqueueAsync(object message, CancellationToken ct)
         {
+            var messageType = message.GetType();
+
             var outbox = new OutboxMessage
             {
-                Type = typeof(T).FullName!,
-                Payload = JsonSerializer.Serialize(message),
+                Id = Guid.NewGuid(),
+                Type = messageType.FullName!,
+                Payload = JsonSerializer.Serialize(message, messageType),
                 OccurredOnUtc = DateTime.UtcNow
             };
 

@@ -1,41 +1,35 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using FSI.Authentication.Application.Exceptions;
-using FSI.Authentication.Application.Interfaces.Repositories;
-using FSI.Authentication.Application.Interfaces.Services;
+﻿using FluentResults;
+using Result = FluentResults.Result;
+using MediatR;
+using FSI.Authentication.Domain.Interfaces;     // IUserAccountService
+using FSI.Authentication.Domain.Abstractions;   // IClock
+using System;                                   // Convert.ToBase64String, se usou no stub
+using System.Text;
 
 namespace FSI.Authentication.Application.UseCases.ChangePassword
 {
-    public sealed record ChangePasswordCommand(string Email, string CurrentPassword, string NewPassword);
-
     public sealed class ChangePasswordHandler
+        : IRequestHandler<ChangePasswordCommand, Result<Unit>> // ou Result<bool>, etc.
     {
-        private readonly IUserAccountRepository _users;
-        private readonly IPasswordHasher _hasher;
+        private readonly IUserAccountService userService; // exemplo
+        private readonly IClock clock;
 
-        public ChangePasswordHandler(IUserAccountRepository users, IPasswordHasher hasher)
+        public ChangePasswordHandler(IUserAccountService userService, IClock clock)
         {
-            _users = users;
-            _hasher = hasher;
+            this.userService = userService;
+            this.clock = clock;
         }
 
-        public async Task Handle(ChangePasswordCommand cmd, CancellationToken ct)
+        public async Task<Result<Unit>> Handle(ChangePasswordCommand request, CancellationToken ct)
         {
-            var emailVo = new FSI.Authentication.Domain.ValueObjects.Email(cmd.Email);
-            var user = await _users.GetByEmailAsync(emailVo, ct);
-            if (user is null) throw new NotFoundException("Usuário não encontrado.");
+            var user = await userService.GetByEmailAsync(request.Email, ct);
+            if (user is null)
+                return Result.Fail($"User not found for {request.Email}");
 
-            if (!_hasher.Verify(cmd.CurrentPassword, user.PasswordHash))
-                throw new UnauthorizedException("Senha atual inválida.");
-
-            if (string.IsNullOrWhiteSpace(cmd.NewPassword) || cmd.NewPassword.Length < 8)
-                throw new ValidationAppException("Nova senha precisa ter pelo menos 8 caracteres.");
-
-            var newHash = _hasher.Hash(cmd.NewPassword);
-            // Assumindo setter público; se for privado, adapte para um método de domínio.
-            user.PasswordHash = newHash;
-
-            await _users.UpdateAsync(user, ct);
+            var newHash = Convert.ToBase64String(Encoding.UTF8.GetBytes(request.NewPassword));
+            user.ChangePassword(newHash, clock);
+            await userService.SaveAsync(user, ct);
+            return Result.Ok(Unit.Value);
         }
     }
 }

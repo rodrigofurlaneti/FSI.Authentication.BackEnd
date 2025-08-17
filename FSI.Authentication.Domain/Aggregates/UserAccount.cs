@@ -1,4 +1,5 @@
 ﻿using FSI.Authentication.Domain.Abstractions;
+using System.Text.RegularExpressions;
 
 namespace FSI.Authentication.Domain.Aggregates
 {
@@ -31,8 +32,12 @@ namespace FSI.Authentication.Domain.Aggregates
             int failedLoginCount = 0,
             DateTimeOffset? lockoutEndUtc = null)
         {
+            if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email obrigatório.", nameof(email));
+            if (!Regex.IsMatch(email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                throw new ArgumentException("Email inválido.", nameof(email));
+
             UserId = userId;
-            Email = email;
+            Email = email.Trim();
             FirstName = firstName;
             LastName = lastName;
             PasswordHash = passwordHash;

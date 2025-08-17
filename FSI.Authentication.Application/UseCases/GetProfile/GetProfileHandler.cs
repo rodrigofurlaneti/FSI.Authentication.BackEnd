@@ -1,34 +1,23 @@
-using FSI.Authentication.Application.Interfaces.Repositories;
-using FSI.Authentication.Domain.ValueObjects;
+using System.Threading;
+using System.Threading.Tasks;
+using FSI.Authentication.Domain.Interfaces;
 
 namespace FSI.Authentication.Application.UseCases.GetProfile
 {
     public sealed class GetProfileHandler
     {
-        private readonly IUserAccountRepository _users;
+        private readonly IProfileService profileService;
 
-        public GetProfileHandler(IUserAccountRepository users)
+        public GetProfileHandler(IProfileService profileService)
         {
-            _users = users;
+            this.profileService = profileService;
         }
 
-        public async Task<ProfileDto> Handle(GetProfileQuery query, CancellationToken ct)
+        public async Task<GetProfileOutput?> Handle(string email, CancellationToken ct = default)
         {
-            var emailVo = new Email(query.Email);
-   
-            var user = await _users.GetByEmailAsync(emailVo, ct);
-            if (user is null)
-            {
-                throw new System.InvalidOperationException("Usuario nao encontrado.");
-            }
-
-            return new ProfileDto(
-                Email: user.Email,
-                FirstName: user.FirstName,
-                LastName: user.LastName,
-                ProfileName: user.ProfileName,
-                IsActive: user.IsActive
-            );
+            var profile = await profileService.GetByEmailAsync(email, ct);
+            if (profile is null) return null;
+            return new GetProfileOutput(profile.Email, profile.ProfileName);
         }
     }
 }

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FSI.Authentication.Infrastructure.Security
+﻿namespace FSI.Authentication.Infrastructure.Security
 {
     public sealed class JwtOptions
     {

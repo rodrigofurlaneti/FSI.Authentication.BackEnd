@@ -2,7 +2,6 @@
 using FSI.Authentication.Application.Interfaces.Messaging;
 using FSI.Authentication.Application.Interfaces.Repositories;
 using FSI.Authentication.Application.Interfaces.Services;
-using FSI.Authentication.Application.Pipeline; // ValidationBehavior<,>, TransactionBehavior<,>
 // Application
 using FSI.Authentication.Application.Services;
 using FSI.Authentication.Application.UseCases.ChangePassword;
@@ -11,8 +10,11 @@ using FSI.Authentication.Application.UseCases.GetProfile;
 using FSI.Authentication.Application.UseCases.Login;
 using FSI.Authentication.Application.UseCases.RegisterUser;
 using FSI.Authentication.Application.Validators;
-using FSI.Authentication.Infrastructure.Messaging;
 using FSI.Authentication.Infrastructure.Outbox;
+// Domain
+using FSI.Authentication.Domain.Abstractions;
+using FSI.Authentication.Domain.Interfaces;
+using FSI.Authentication.Infrastructure.Services;
 // Infrastructure
 using FSI.Authentication.Infrastructure.Persistence;
 using FSI.Authentication.Infrastructure.Repositories;
@@ -20,14 +22,6 @@ using FSI.Authentication.Infrastructure.Security;
 // Presentation
 using FSI.Authentication.Presentation.Config;
 using FSI.Authentication.Presentation.ProblemDetails;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -55,6 +49,10 @@ namespace FSI.Authentication.Presentation
             var jwtOptions = _configuration.GetSection("Jwt").Get<JwtOptions>()
                 ?? new JwtOptions { SigningKey = "troque-esta-chave-super-secreta", Issuer = "FSI.Auth", Audience = "FSI.API", ExpirationMinutes = 60 };
 
+            // ======= Domain =======
+            services.AddSingleton<IClock, SystemClock>();
+            services.AddScoped<IProfileService, ProfileService>();
+
             // ======= Infrastructure: Persistence / UoW =======
             services.AddSingleton<ISqlConnectionFactory>(_ => new SqlConnectionFactory(connectionString));
             services.AddScoped<DbSession>();
@@ -67,7 +65,7 @@ namespace FSI.Authentication.Presentation
 
             // ======= Infrastructure: Repos / Outbox / Messaging / Security =======
             services.AddScoped<IUserAccountRepository, UserAccountRepository>();
-
+            services.AddScoped<IUserAccountService, UserAccountService>();
             services.AddScoped<IOutbox, SqlOutbox>();
             services.AddScoped<IEventPublisher, EventPublisher>();
 
@@ -96,6 +94,9 @@ namespace FSI.Authentication.Presentation
             // Pipeline Behaviors (decorators do fluxo de casos de uso)
             services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             services.AddScoped(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
+
+            // MediatR v11 (ver passo 8)
+            services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ChangeProfileHandler).Assembly));
 
             // ======= AuthN/AuthZ (JWT Bearer) =======
             services

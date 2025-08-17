@@ -7,10 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Migrations\003_MassDataDefault.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
+	<PackageReference Include="FluentResults" Version="4.0.0" />
+	<PackageReference Include="MediatR" Version="11.1.0" />
+	<PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
   </ItemGroup>

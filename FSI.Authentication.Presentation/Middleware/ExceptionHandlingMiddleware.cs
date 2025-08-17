@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using FSI.Authentication.Application.Exceptions;
+using Microsoft.AspNetCore.Http;      // <- faltava
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;     // <- faltava
 using System.Net;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace FSI.Authentication.Presentation.Middleware
 {
@@ -36,13 +40,13 @@ namespace FSI.Authentication.Presentation.Middleware
 
             switch (ex)
             {
-                case ValidationAppException ve:
+                case ValidationAppException:
                     type = "https://httpstatuses.com/400"; title = "Erro de validação"; status = 400; break;
-                case UnauthorizedException ue:
+                case UnauthorizedException:
                     type = "https://httpstatuses.com/401"; title = "Não autorizado"; status = 401; break;
-                case NotFoundException ne:
+                case NotFoundException:
                     type = "https://httpstatuses.com/404"; title = "Não encontrado"; status = 404; break;
-                case ConflictException ce:
+                case ConflictException:
                     type = "https://httpstatuses.com/409"; title = "Conflito"; status = 409; break;
             }
 
@@ -62,7 +66,7 @@ namespace FSI.Authentication.Presentation.Middleware
         }
     }
 
-    file-static class ProblemDetailsExtensions
+    internal static class ProblemDetailsExtensions
     {
         public static ProblemDetails WithExtensions(this ProblemDetails p, IDictionary<string, object?> ext)
         {
