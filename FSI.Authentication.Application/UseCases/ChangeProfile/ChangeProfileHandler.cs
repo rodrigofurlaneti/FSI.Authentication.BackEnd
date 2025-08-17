@@ -1,31 +1,26 @@
-﻿using FSI.Authentication.Application.DTOs.Auth;
-using FSI.Authentication.Application.Interfaces.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using FSI.Authentication.Application.Exceptions;
+using FSI.Authentication.Application.Interfaces.Repositories;
 
-namespace FSI.Authentication.Application.UseCases.ChangeProfile
+namespace FSI.Authentication.Application.UseCases.GetProfile
 {
-    public sealed class ChangeProfileHandler
+    public sealed class GetProfileHandler
     {
-        private readonly IUserAccountRepository repo;
-        public ChangeProfileHandler(IUserAccountRepository repo) => this.repo = repo;
+        private readonly IUserAccountRepository _users;
 
-        public async Task<ChangeProfileResponse> HandleAsync(ChangeProfileCommand cmd, CancellationToken ct)
+        public GetProfileHandler(IUserAccountRepository users)
         {
-            var email = Email.Create(cmd.Email);
-            var user = await repo.GetByEmailAsync(email, ct) ?? throw new NotFoundException("Usuário não encontrado");
+            _users = users;
+        }
 
-            var old = user.Profile.Name.Value;
-            var newProfileName = FSI.Authentication.Domain.ValueObjects.ProfileName.Create(cmd.NewProfile);
-            var newProfile = new Profile(newProfileName);
+        public async Task<ProfileDto> Handle(GetProfileQuery query, CancellationToken ct)
+        {
+            var emailVo = new FSI.Authentication.Domain.ValueObjects.Email(query.Email);
+            var user = await _users.GetByEmailAsync(emailVo, ct);
+            if (user is null) throw new NotFoundException("Usuário não encontrado.");
 
-            user.ChangeProfile(newProfile);
-            await repo.UpdateAsync(user, ct);
-
-            return new ChangeProfileResponse(user.Id, old, newProfileName.Value);
+            return new ProfileDto(user.Email, user.FirstName, user.LastName, user.ProfileName, user.IsActive);
         }
     }
 }

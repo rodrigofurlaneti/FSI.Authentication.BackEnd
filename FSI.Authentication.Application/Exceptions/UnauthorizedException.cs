@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FSI.Authentication.Application.Exceptions
+﻿namespace FSI.Authentication.Application.Exceptions
 {
-    public sealed class UnauthorizedException : AppException
+    public class UnauthorizedException : Exception
     {
         public UnauthorizedException(string message) : base(message) { }
     }

@@ -1,18 +1,14 @@
-﻿using FSI.Authentication.Application.UseCases.ChangeProfile;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FluentValidation;
+using FSI.Authentication.Application.UseCases.ChangeProfile;
 
 namespace FSI.Authentication.Application.Validators
 {
-    public sealed class ChangeProfileValidator : IValidator<ChangeProfileCommand>
+    public sealed class ChangeProfileValidator : AbstractValidator<ChangeProfileCommand>
     {
-        public void ValidateAndThrow(ChangeProfileCommand c)
+        public ChangeProfileValidator()
         {
-            if (string.IsNullOrWhiteSpace(c.Email)) throw new ValidationAppException("E-mail obrigatório");
-            if (string.IsNullOrWhiteSpace(c.NewProfile)) throw new ValidationAppException("Novo perfil obrigatório");
+            RuleFor(x => x.Email).NotEmpty().EmailAddress();
+            RuleFor(x => x.NewProfileName).NotEmpty().MaximumLength(80);
         }
     }
 }

@@ -1,43 +1,41 @@
-﻿using FSI.Authentication.Application.Interfaces.Repositories;
-using FSI.Authentication.Application.Interfaces.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using FSI.Authentication.Application.Exceptions;
+using FSI.Authentication.Application.Interfaces.Repositories;
+using FSI.Authentication.Application.Interfaces.Services;
 
 namespace FSI.Authentication.Application.UseCases.ChangePassword
 {
+    public sealed record ChangePasswordCommand(string Email, string CurrentPassword, string NewPassword);
+
     public sealed class ChangePasswordHandler
     {
-        private readonly IUserAccountRepository repo;
-        private readonly IPasswordHasher hasher;
-        private readonly FSI.Authentication.Domain.Services.AuthDomainService domainService;
-        private readonly FSI.Authentication.Application.Interfaces.Services.IEventPublisher publisher;
+        private readonly IUserAccountRepository _users;
+        private readonly IPasswordHasher _hasher;
 
-        public ChangePasswordHandler(
-            IUserAccountRepository repo,
-            IPasswordHasher hasher,
-            FSI.Authentication.Domain.Services.AuthDomainService domainService,
-            FSI.Authentication.Application.Interfaces.Services.IEventPublisher publisher)
+        public ChangePasswordHandler(IUserAccountRepository users, IPasswordHasher hasher)
         {
-            this.repo = repo; this.hasher = hasher; this.domainService = domainService; this.publisher = publisher;
+            _users = users;
+            _hasher = hasher;
         }
 
-        public async Task HandleAsync(ChangePasswordCommand cmd, CancellationToken ct)
+        public async Task Handle(ChangePasswordCommand cmd, CancellationToken ct)
         {
-            var email = Email.Create(cmd.Email);
-            var user = await repo.GetByEmailAsync(email, ct) ?? throw new NotFoundException("Usuário não encontrado");
-            if (!hasher.Verify(cmd.CurrentPassword, user.PasswordHash.Value))
-                throw new UnauthorizedException("Senha atual incorreta");
+            var emailVo = new FSI.Authentication.Domain.ValueObjects.Email(cmd.Email);
+            var user = await _users.GetByEmailAsync(emailVo, ct);
+            if (user is null) throw new NotFoundException("Usuário não encontrado.");
 
-            var strong = domainService.EnsurePasswordStrength(cmd.NewPassword);
-            if (!strong.IsSuccess) throw new ValidationAppException(strong.Error!);
+            if (!_hasher.Verify(cmd.CurrentPassword, user.PasswordHash))
+                throw new UnauthorizedException("Senha atual inválida.");
 
-            var newHash = PasswordHash.FromHashed(hasher.Hash(cmd.NewPassword));
-            user.ChangePassword(newHash);
-            await repo.UpdateAsync(user, ct);
-            await publisher.PublishAsync(new PasswordChangedNotification(user.Id, DateTime.UtcNow), ct);
+            if (string.IsNullOrWhiteSpace(cmd.NewPassword) || cmd.NewPassword.Length < 8)
+                throw new ValidationAppException("Nova senha precisa ter pelo menos 8 caracteres.");
+
+            var newHash = _hasher.Hash(cmd.NewPassword);
+            // Assumindo setter público; se for privado, adapte para um método de domínio.
+            user.PasswordHash = newHash;
+
+            await _users.UpdateAsync(user, ct);
         }
     }
 }

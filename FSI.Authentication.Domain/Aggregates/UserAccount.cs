@@ -1,218 +1,129 @@
-﻿using System;
-using FSI.Authentication.Domain.ValueObjects;
-using FSI.Authentication.Domain.Entities;
+﻿using FSI.Authentication.Domain.Abstractions;
 
 namespace FSI.Authentication.Domain.Aggregates
 {
     public sealed class UserAccount
     {
-        // ========= Identidade =========
-        public Guid Id { get; private set; }
-
-        // ========= Dados principais =========
-        public Email Email { get; private set; } = default!;
-        public PersonName Name { get; private set; } = default!;
-        public PasswordHash PasswordHash { get; private set; } = default!;
-        /// <summary>Perfil do usuário (ex.: Gerente, Diretor, ...), incluindo permissões.</summary>
-        public Profile Profile { get; private set; } = default!;
-
-        // ========= Estado =========
+        // ========== Propriedades básicas (espelham dbo.Users) ==========
+        public Guid UserId { get; private set; }
+        public string Email { get; private set; } = default!;
+        public string FirstName { get; private set; } = default!;
+        public string? LastName { get; private set; }
+        public string PasswordHash { get; private set; } = default!;
         public bool IsActive { get; private set; }
         public int FailedLoginCount { get; private set; }
-        public DateTime? LockoutEndUtc { get; private set; }
+        public DateTimeOffset? LockoutEndUtc { get; private set; }
+        public string ProfileName { get; private set; } = default!;
 
-        // ========= Auditoria =========
-        public DateTime CreatedAtUtc { get; private set; }
-        public DateTime UpdatedAtUtc { get; private set; }
+        // Campos “de domínio” (não precisam existir no DB; ajudam o modelo)
+        public DateTimeOffset CreatedAtUtc { get; private set; }
+        public DateTimeOffset UpdatedAtUtc { get; private set; }
 
-        // ctor privado para DDD/ORM
-        private UserAccount() { }
-
-        private UserAccount(
-            Guid id,
-            Email email,
-            PersonName name,
-            PasswordHash passwordHash,
-            Profile profile,
-            bool isActive,
-            int failedLoginCount,
-            DateTime? lockoutEndUtc,
-            DateTime createdAtUtc,
-            DateTime updatedAtUtc)
+        // ========== Ctor de fábrica ==========
+        public UserAccount(
+            Guid userId,
+            string email,
+            string firstName,
+            string? lastName,
+            string passwordHash,
+            string profileName,
+            bool isActive = true,
+            int failedLoginCount = 0,
+            DateTimeOffset? lockoutEndUtc = null)
         {
-            Id = id;
+            UserId = userId;
             Email = email;
-            Name = name;
+            FirstName = firstName;
+            LastName = lastName;
             PasswordHash = passwordHash;
-            Profile = profile;
+            ProfileName = profileName;
             IsActive = isActive;
             FailedLoginCount = failedLoginCount;
             LockoutEndUtc = lockoutEndUtc;
-            CreatedAtUtc = createdAtUtc;
-            UpdatedAtUtc = updatedAtUtc;
+
+            var now = DateTimeOffset.UtcNow;
+            CreatedAtUtc = now;
+            UpdatedAtUtc = now;
         }
 
-        // ========= Factories =========
-
-        /// <summary>Criação de novo usuário (regra de negócio).</summary>
-        public static UserAccount Create(Email email, PersonName name, PasswordHash passwordHash, Profile profile)
-        {
-            var now = DateTime.UtcNow;
-
-            return new UserAccount(
-                id: Guid.NewGuid(),
-                email: email,
-                name: name,
-                passwordHash: passwordHash,
-                profile: profile,
-                isActive: true,
-                failedLoginCount: 0,
-                lockoutEndUtc: null,
-                createdAtUtc: now,
-                updatedAtUtc: now
-            );
-        }
-
-        /// <summary>Reconstituição a partir do banco (sem timestamps informados).</summary>
-        public static UserAccount Hydrate(
-            Guid id,
-            Email email,
-            PersonName name,
-            PasswordHash passwordHash,
-            Profile profile,
-            bool isActive,
-            int failedLoginCount,
-            DateTime? lockoutEndUtc)
-        {
-            var now = DateTime.UtcNow;
-
-            return new UserAccount(
-                id: id,
-                email: email,
-                name: name,
-                passwordHash: passwordHash,
-                profile: profile,
-                isActive: isActive,
-                failedLoginCount: failedLoginCount,
-                lockoutEndUtc: lockoutEndUtc,
-                createdAtUtc: now,
-                updatedAtUtc: now
-            );
-        }
-
-        /// <summary>Reconstituição a partir do banco (com timestamps).</summary>
-        public static UserAccount Hydrate(
-            Guid id,
-            Email email,
-            PersonName name,
-            PasswordHash passwordHash,
-            Profile profile,
-            bool isActive,
-            int failedLoginCount,
-            DateTime? lockoutEndUtc,
-            DateTime createdAtUtc,
-            DateTime updatedAtUtc)
-        {
-            return new UserAccount(
-                id: id,
-                email: email,
-                name: name,
-                passwordHash: passwordHash,
-                profile: profile,
-                isActive: isActive,
-                failedLoginCount: failedLoginCount,
-                lockoutEndUtc: lockoutEndUtc,
-                createdAtUtc: createdAtUtc,
-                updatedAtUtc: updatedAtUtc
-            );
-        }
-
-        // ========= Regras / Comportamentos =========
-
-        public void ChangePassword(PasswordHash newPasswordHash)
-        {
-            PasswordHash = newPasswordHash;
-            UpdatedAtUtc = DateTime.UtcNow;
-        }
-
-        public void ChangeProfile(Profile newProfile)
-        {
-            Profile = newProfile;
-            UpdatedAtUtc = DateTime.UtcNow;
-        }
-
-        public void Activate()
+        // ========== Regras ==========
+        public bool CanSignIn(IClock clock, out string? reason)
         {
             if (!IsActive)
             {
-                IsActive = true;
-                UpdatedAtUtc = DateTime.UtcNow;
+                reason = "Conta inativa.";
+                return false;
             }
-        }
 
-        public void Deactivate()
-        {
-            if (IsActive)
+            if (LockoutEndUtc.HasValue && LockoutEndUtc.Value > clock.UtcNow)
             {
-                IsActive = false;
-                UpdatedAtUtc = DateTime.UtcNow;
+                reason = $"Conta bloqueada até {LockoutEndUtc:O}.";
+                return false;
             }
-        }
 
-        public void IncrementFailedLogin()
-        {
-            FailedLoginCount++;
-            UpdatedAtUtc = DateTime.UtcNow;
-        }
-
-        public void ResetFailedLogin()
-        {
-            if (FailedLoginCount != 0)
-            {
-                FailedLoginCount = 0;
-                UpdatedAtUtc = DateTime.UtcNow;
-            }
-        }
-
-        public void SetLockout(DateTime? untilUtc)
-        {
-            LockoutEndUtc = untilUtc;
-            UpdatedAtUtc = DateTime.UtcNow;
-        }
-
-        // ========= Regras de Autenticação =========
-
-        public bool IsLockedOut =>
-            LockoutEndUtc.HasValue && LockoutEndUtc.Value > DateTime.UtcNow;
-
-        /// <summary>Usuário pode autenticar? (precisa estar ativo e não bloqueado)</summary>
-        public bool CanSignIn()
-        {
-            if (!IsActive) return false;
-            if (IsLockedOut) return false;
+            reason = null;
             return true;
         }
 
-        /// <summary>Chame após login bem-sucedido.</summary>
-        public void OnSuccessfulLogin()
-        {
-            ResetFailedLogin();
-            SetLockout(null);
-            UpdatedAtUtc = DateTime.UtcNow;
-        }
+        // >>> Sobrecarga pedida pelo seu serviço (1 argumento) <<<
+        public bool CanSignIn(IClock clock) => CanSignIn(clock, out _);
 
-        /// <summary>Chame após falha de login; aplica lockout se atingir o limite.</summary>
-        public void OnFailedLogin(int maxFailedAttempts, TimeSpan lockoutFor)
+        public void RegisterFailedLogin(IClock clock, int lockoutThreshold = 5, TimeSpan? lockoutFor = null)
         {
-            IncrementFailedLogin();
+            FailedLoginCount++;
 
-            if (FailedLoginCount >= maxFailedAttempts)
+            if (lockoutFor is null)
+                lockoutFor = TimeSpan.FromMinutes(15);
+
+            if (FailedLoginCount >= lockoutThreshold)
             {
-                SetLockout(DateTime.UtcNow.Add(lockoutFor));
-                // opcional: ResetFailedLogin();
+                LockoutEndUtc = clock.UtcNow.Add(lockoutFor.Value);
+                FailedLoginCount = 0; // zera após aplicar lockout
             }
 
-            UpdatedAtUtc = DateTime.UtcNow;
+            UpdatedAtUtc = clock.UtcNow;
+        }
+
+        public void ResetFailedLogins(IClock clock)
+        {
+            FailedLoginCount = 0;
+            UpdatedAtUtc = clock.UtcNow;
+        }
+
+        public void Unlock(IClock clock)
+        {
+            LockoutEndUtc = null;
+            UpdatedAtUtc = clock.UtcNow;
+        }
+
+        public void ChangePassword(string newPasswordHash, IClock clock)
+        {
+            if (string.IsNullOrWhiteSpace(newPasswordHash))
+                throw new ArgumentException("Hash de senha inválido.", nameof(newPasswordHash));
+
+            PasswordHash = newPasswordHash;
+            UpdatedAtUtc = clock.UtcNow;
+        }
+
+        public void ChangeProfile(string newProfileName, IClock clock)
+        {
+            if (string.IsNullOrWhiteSpace(newProfileName))
+                throw new ArgumentException("Perfil inválido.", nameof(newProfileName));
+
+            ProfileName = newProfileName;
+            UpdatedAtUtc = clock.UtcNow;
+        }
+
+        public void Deactivate(IClock clock)
+        {
+            IsActive = false;
+            UpdatedAtUtc = clock.UtcNow;
+        }
+
+        public void Activate(IClock clock)
+        {
+            IsActive = true;
+            UpdatedAtUtc = clock.UtcNow;
         }
     }
 }

@@ -1,14 +1,19 @@
-﻿using FSI.Authentication.Domain.ValueObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using System.Linq.Expressions;
+using FSI.Authentication.Domain.Aggregates;
 
 namespace FSI.Authentication.Domain.Specifications
 {
-    public static class UserByEmailSpec
+    public sealed class UserByEmailSpec : Specification<UserAccount>
     {
-        public static Func<FSI.Authentication.Domain.Aggregates.UserAccount, bool> Is(Email email) => u => u.Email == email;
+        // Comparação direta com string, pois UserAccount.Email é string
+        public UserByEmailSpec(string email)
+            : base(u => u.Email == email)
+        { }
+
+        // Sobrecarga para VO Email -> delega para a versão string
+        public UserByEmailSpec(FSI.Authentication.Domain.ValueObjects.Email email)
+            : this(email.Value)
+        { }
     }
 }

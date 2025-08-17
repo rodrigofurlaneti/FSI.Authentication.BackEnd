@@ -1,53 +1,57 @@
-﻿using FSI.Authentication.Application.DTOs.Auth;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using FSI.Authentication.Application.Interfaces.Repositories;
 using FSI.Authentication.Application.Interfaces.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FSI.Authentication.Domain.Abstractions;
+using FSI.Authentication.Domain.Aggregates;
+using FSI.Authentication.Domain.Services;
 
 namespace FSI.Authentication.Application.UseCases.RegisterUser
 {
     public sealed class RegisterUserHandler
     {
-        private readonly IUserAccountRepository userRepo;
-        private readonly IPasswordHasher hasher;
-        private readonly AuthDomainService domainService;
-        private readonly IEventPublisher publisher;
+        private readonly IUserAccountRepository _users;
+        private readonly IPasswordHasher _hasher;
+        private readonly IAuthDomainService _domain;
+        private readonly IClock _clock;
 
         public RegisterUserHandler(
-            IUserAccountRepository userRepo,
+            IUserAccountRepository users,
             IPasswordHasher hasher,
-            AuthDomainService domainService,
-            IEventPublisher publisher)
+            IAuthDomainService domain,
+            IClock clock)
         {
-            this.userRepo = userRepo; this.hasher = hasher;
-            this.domainService = domainService; this.publisher = publisher;
+            _users = users;
+            _hasher = hasher;
+            _domain = domain;
+            _clock = clock;
         }
 
-        public async Task<RegisterUserResponse> HandleAsync(RegisterUserCommand cmd, CancellationToken ct)
+        public async Task<Guid> Handle(RegisterUserCommand cmd, CancellationToken ct)
         {
-            var email = Email.Create(cmd.Email);
-            var name = PersonName.Create(cmd.FirstName, cmd.LastName);
+            var emailVo = new FSI.Authentication.Domain.ValueObjects.Email(cmd.Email);
+            var existing = await _users.GetByEmailAsync(emailVo, ct);
+            if (existing is not null)
+                throw new InvalidOperationException("E-mail já cadastrado.");
 
-            var strength = domainService.EnsurePasswordStrength(cmd.Password);
-            if (!strength.IsSuccess) throw new ValidationAppException(strength.Error!);
+            var hash = _hasher.Hash(cmd.Password);
 
-            var existing = await userRepo.GetByEmailAsync(email, ct);
-            if (existing is not null) throw new ConflictException($"E-mail já cadastrado: {email}");
+            var user = new UserAccount(
+                Guid.NewGuid(),
+                emailVo,              // se o Domain aceitar string, você pode trocar para cmd.Email
+                cmd.FirstName,
+                cmd.LastName,
+                hash,
+                cmd.ProfileName,
+                isActive: true
+            );
 
-            var profileName = FSI.Authentication.Domain.ValueObjects.ProfileName.Create(cmd.Profile);
-            var profile = new Profile(profileName);
+            if (!_domain.CanSignIn(user, _clock, out var reason))
+                throw new InvalidOperationException(reason ?? "Usuário inválido para autenticação.");
 
-            var hash = PasswordHash.FromHashed(hasher.Hash(cmd.Password));
-            var user = UserAccount.Register(email, name, hash, profile);
-
-            await userRepo.AddAsync(user, ct);
-            await publisher.PublishAsync(
-                new UserRegisteredNotification(user.Id, user.Email.Value, user.Name.ToString(), profileName.Value, DateTime.UtcNow), ct);
-
-            return new RegisterUserResponse(user.Id, user.Email.Value, user.Name.ToString(), profileName.Value);
+            await _users.AddAsync(user, ct);
+            return user.UserId;
         }
     }
 }

@@ -1,23 +1,32 @@
-﻿using FSI.Authentication.Application.DTOs.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using FSI.Authentication.Domain.Aggregates;
 
 namespace FSI.Authentication.Application.Mappers
 {
+    /// <summary>
+    /// Mapeamentos utilitários para UserAccount.
+    /// Mantido simples para não depender de AutoMapper.
+    /// </summary>
     public static class UserMapping
     {
-        public static UserProfileDto ToProfileDto(UserAccount u)
+        // Modelo de leitura mínimo (interno à camada Application)
+        public sealed record UserReadModel(
+            Guid UserId,
+            string Email,
+            string FirstName,
+            string? LastName,
+            string ProfileName,
+            bool IsActive
+        );
+
+        public static UserReadModel ToReadModel(this UserAccount user)
             => new(
-                u.Id,
-                u.Email.Value,
-                u.Name.ToString(),
-                u.IsActive,
-                new ProfileDto(
-                    u.Profile.Name.Value,
-                    u.Profile.Permissions.Select(p => new PermissionDto(p.Code, p.Description)).ToArray()
-                )
+                user.UserId,
+                user.Email,
+                user.FirstName,
+                user.LastName,
+                user.ProfileName,
+                user.IsActive
             );
     }
+}

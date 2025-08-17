@@ -1,64 +1,83 @@
-﻿using FSI.Authentication.Application.DTOs.Auth;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using FSI.Authentication.Application.Interfaces.Repositories;
 using FSI.Authentication.Application.Interfaces.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FSI.Authentication.Domain.Abstractions;
+using FSI.Authentication.Domain.Services;
 
 namespace FSI.Authentication.Application.UseCases.Login
 {
-    public sealed class LoginHandler
+    public sealed record LoginCommand(string Email, string Password);
+
+    public sealed class LoginResult
     {
-        private readonly IUserAccountRepository repo;
-        private readonly IPasswordHasher hasher;
-        private readonly ITokenProvider tokenProvider;
-        private readonly AuthDomainService domainService;
-        private readonly IEventPublisher publisher;
+        public bool IsSuccessful { get; init; }
+        public string? Error { get; init; }
+        public string? Token { get; init; }
+        public DateTimeOffset? ExpiresAtUtc { get; init; }
+        public Guid? UserId { get; init; }
+        public string? Email { get; init; }
+        public string? ProfileName { get; init; }
 
-        public LoginHandler(
-            IUserAccountRepository repo,
-            IPasswordHasher hasher,
-            ITokenProvider tokenProvider,
-            AuthDomainService domainService,
-            IEventPublisher publisher)
-        {
-            this.repo = repo; this.hasher = hasher; this.tokenProvider = tokenProvider;
-            this.domainService = domainService; this.publisher = publisher;
-        }
+        public static LoginResult Fail(string error) => new() { IsSuccessful = false, Error = error };
 
-        public async Task<LoginResponse> HandleAsync(LoginCommand cmd, CancellationToken ct)
-        {
-            var email = Email.Create(cmd.Email);
-            var user = await repo.GetByEmailAsync(email, ct);
-            if (user is null) throw new UnauthorizedException("Credenciais inválidas");
-
-            if (!domainService.CanSignIn(user))
-                throw new UnauthorizedException("Usuário bloqueado ou inativo");
-
-            if (!hasher.Verify(cmd.Password, user.PasswordHash.Value))
+        public static LoginResult Success(string token, DateTimeOffset expires, Guid userId, string email, string profile)
+            => new()
             {
-                user.RegisterFailedLogin(new SystemClock(), 5, TimeSpan.FromMinutes(15));
-                await repo.UpdateAsync(user, ct);
-                await publisher.PublishAsync(new FailedLoginNotification(user.Id, user.Email.Value, DateTime.UtcNow), ct);
-                throw new UnauthorizedException("Credenciais inválidas");
-            }
-
-            user.ResetFailures();
-            await repo.UpdateAsync(user, ct);
-
-            var profile = user.Profile.Name.Value;
-            var permissions = user.Profile.Permissions.Select(p => p.Code).ToArray();
-            var (access, exp) = tokenProvider.CreateAccessToken(user.Id, user.Email.Value, profile, permissions);
-            var refresh = tokenProvider.CreateRefreshToken(user.Id);
-
-            return new LoginResponse(access, refresh, exp, profile, permissions);
-        }
+                IsSuccessful = true,
+                Token = token,
+                ExpiresAtUtc = expires,
+                UserId = userId,
+                Email = email,
+                ProfileName = profile
+            };
     }
 
-    file-static class SystemClock : FSI.Authentication.Domain.Abstractions.IClock
+    public sealed class LoginHandler
     {
-        public DateTime UtcNow => DateTime.UtcNow;
+        private readonly IUserAccountRepository _users;
+        private readonly IPasswordHasher _hasher;
+        private readonly ITokenProvider _tokens;
+        private readonly IAuthDomainService _domain;
+        private readonly IClock _clock;
+
+        public LoginHandler(
+            IUserAccountRepository users,
+            IPasswordHasher hasher,
+            ITokenProvider tokens,
+            IAuthDomainService domain,
+            IClock clock)
+        {
+            _users = users;
+            _hasher = hasher;
+            _tokens = tokens;
+            _domain = domain;
+            _clock = clock;
+        }
+
+        public async Task<LoginResult> Handle(LoginCommand command, CancellationToken ct)
+        {
+            var emailVo = new FSI.Authentication.Domain.ValueObjects.Email(command.Email);
+            var user = await _users.GetByEmailAsync(emailVo, ct);
+            if (user is null)
+                return LoginResult.Fail("Credenciais inválidas.");
+
+            if (!_hasher.Verify(command.Password, user.PasswordHash))
+            {
+                user.RegisterFailedLogin(_clock);
+                await _users.UpdateAsync(user, ct);
+                return LoginResult.Fail("Credenciais inválidas.");
+            }
+
+            if (!_domain.CanSignIn(user, _clock, out var reason))
+                return LoginResult.Fail(reason ?? "Não autorizado.");
+
+            user.ResetFailedLogins(_clock);
+            await _users.UpdateAsync(user, ct);
+
+            var token = _tokens.CreateToken(user);
+            return LoginResult.Success(token.Token, token.ExpiresAtUtc, user.UserId, user.Email, user.ProfileName);
+        }
     }
 }

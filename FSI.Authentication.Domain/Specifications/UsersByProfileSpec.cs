@@ -1,9 +1,18 @@
-﻿using FSI.Authentication.Domain.ValueObjects;
+﻿using System;
+using System.Linq.Expressions;
+using FSI.Authentication.Domain.Aggregates;
 
 namespace FSI.Authentication.Domain.Specifications
 {
-    public static class UsersByProfileSpec
+    // Assume que você já tem uma base Specification<T> que recebe uma expressão.
+    public sealed class UsersByProfileSpec : Specification<UserAccount>
     {
-        public static Func<FSI.Authentication.Domain.Aggregates.UserAccount, bool> Has(ProfileName profile) => u => u.Profile.Name == profile;
+        public UsersByProfileSpec(string profileName)
+            : base(HasProfile(profileName))
+        {
+        }
+
+        private static Expression<Func<UserAccount, bool>> HasProfile(string profileName)
+            => u => u.ProfileName == profileName; // ajuste para string
     }
 }

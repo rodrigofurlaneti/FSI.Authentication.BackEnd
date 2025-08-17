@@ -1,16 +1,17 @@
-﻿using FSI.Authentication.Application.Interfaces.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using FSI.Authentication.Application.Interfaces.Services;
 
 namespace FSI.Authentication.Application.Services
 {
-    public sealed class PasswordHasherAdapter
+    /// <summary>
+    /// Adapter opcional. Não use em produção; a implementação real vem da camada Infra (Pbkdf2PasswordHasher).
+    /// </summary>
+    public sealed class PasswordHasherAdapter : IPasswordHasher
     {
-        private readonly IPasswordHasher hasher;
-        public PasswordHasherAdapter(IPasswordHasher hasher) => this.hasher = hasher;
-        public PasswordHash HashToVo(string rawPassword) => PasswordHash.FromHashed(hasher.Hash(rawPassword));
+        public string Hash(string password) =>
+            throw new NotSupportedException("Use Infrastructure.Security.Pbkdf2PasswordHasher via DI.");
+
+        public bool Verify(string password, string hash) =>
+            throw new NotSupportedException("Use Infrastructure.Security.Pbkdf2PasswordHasher via DI.");
     }
 }

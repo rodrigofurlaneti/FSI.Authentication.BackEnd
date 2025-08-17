@@ -1,18 +1,14 @@
-﻿using FSI.Authentication.Application.UseCases.Login;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FluentValidation;
+using FSI.Authentication.Application.UseCases.Login;
 
 namespace FSI.Authentication.Application.Validators
 {
-    public sealed class LoginValidator : IValidator<LoginCommand>
+    public sealed class LoginValidator : AbstractValidator<LoginCommand>
     {
-        public void ValidateAndThrow(LoginCommand c)
+        public LoginValidator()
         {
-            if (string.IsNullOrWhiteSpace(c.Email)) throw new ValidationAppException("E-mail obrigatório");
-            if (string.IsNullOrWhiteSpace(c.Password)) throw new ValidationAppException("Senha obrigatória");
+            RuleFor(x => x.Email).NotEmpty().EmailAddress();
+            RuleFor(x => x.Password).NotEmpty();
         }
     }
 }
