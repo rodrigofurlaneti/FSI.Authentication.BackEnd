@@ -1,33 +1,23 @@
-﻿using System;
-using System.Data;
+﻿using System.Data;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-
-using FSI.Authentication.Domain.Abstractions.Messaging;
-using FSI.Authentication.Infrastructure.Outbox;
 using FSI.Authentication.Infrastructure.Persistence;
+using DomMsg = FSI.Authentication.Domain.Abstractions.Messaging;
 
-namespace FSI.Authentication.Infrastructure
+namespace FSI.Authentication.Infrastructure.Outbox
 {
-    public sealed class SqlOutbox : IOutbox
+    public sealed class SqlOutbox : DomMsg.IOutbox
     {
         private readonly DbSession _session;
         public SqlOutbox(DbSession session) => _session = session;
 
-        public Task EnqueueAsync<T>(T message, CancellationToken ct) where T : class
-            => EnqueueAsync((object)message!, ct);
-
+        // método não genérico da interface Domain
         public async Task EnqueueAsync(object message, CancellationToken ct)
         {
-            var messageType = message.GetType();
-
             var outbox = new OutboxMessage
             {
-                Id = Guid.NewGuid(),
-                Type = messageType.FullName!,
-                Payload = JsonSerializer.Serialize(message, messageType),
+                Type = message.GetType().FullName!,
+                Payload = JsonSerializer.Serialize(message),
                 OccurredOnUtc = DateTime.UtcNow
             };
 
@@ -40,6 +30,12 @@ namespace FSI.Authentication.Infrastructure
             cmd.Parameters.Add(new SqlParameter("@OccurredOnUtc", SqlDbType.DateTime2) { Value = outbox.OccurredOnUtc });
 
             await cmd.ExecuteNonQueryAsync(ct);
+        }
+
+        public Task EnqueueAsync<T>(T message, CancellationToken ct) where T : class
+        {
+            // serialize e salvar na tabela Outbox...
+            return Task.CompletedTask;
         }
     }
 }

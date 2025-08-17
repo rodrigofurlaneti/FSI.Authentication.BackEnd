@@ -1,14 +1,15 @@
-﻿using System;
+﻿using FSI.Authentication.Domain.Abstractions;
+using FSI.Authentication.Domain.Aggregates;
+using FSI.Authentication.Domain.Interfaces;
+using FSI.Authentication.Domain.Services;
+using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using FSI.Authentication.Domain.Aggregates;
-using FSI.Authentication.Domain.Interfaces;
-using FSI.Authentication.Domain.Abstractions;
 
 namespace FSI.Authentication.Infrastructure.Services
 {
-    public sealed class UserAccountService : IUserAccountService
+    public sealed class UserAccountService : IUserAccountService, IAuthDomainService
     {
         private readonly IClock clock;
 
@@ -26,5 +27,8 @@ namespace FSI.Authentication.Infrastructure.Services
             // TODO: persistir (EF/Dapper/etc). Aqui é só um stub.
             return Task.CompletedTask;
         }
+
+        public bool CanSignIn(UserAccount user, IClock clock, out string? reason)
+    => user.CanSignIn(clock, out reason);
     }
 }

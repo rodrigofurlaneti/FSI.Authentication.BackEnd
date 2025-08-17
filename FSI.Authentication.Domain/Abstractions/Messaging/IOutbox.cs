@@ -5,6 +5,6 @@ namespace FSI.Authentication.Domain.Abstractions.Messaging
 {
     public interface IOutbox
     {
-        Task EnqueueAsync(object message, CancellationToken ct = default);
+        Task EnqueueAsync<T>(T message, CancellationToken ct) where T : class;
     }
 }

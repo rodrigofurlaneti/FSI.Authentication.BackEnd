@@ -1,48 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using FSI.Authentication.Domain.Abstractions.Security;
 using FSI.Authentication.Domain.Aggregates;
+using Microsoft.IdentityModel.Tokens;
+using AppServ = FSI.Authentication.Application.Interfaces.Services;
 
 namespace FSI.Authentication.Infrastructure.Security
 {
-    public sealed class JwtTokenProvider : ITokenProvider
+    public sealed class JwtTokenProvider : AppServ.ITokenProvider
     {
         private readonly JwtOptions _opt;
         public JwtTokenProvider(JwtOptions opt) => _opt = opt;
 
-        public string CreateAccessToken(UserAccount user)
+        public AppServ.AccessToken CreateToken(UserAccount user)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTimeOffset.UtcNow;
             var expires = now.AddMinutes(_opt.ExpirationMinutes);
 
             var claims = new List<Claim>
             {
-                new(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+                new(JwtRegisteredClaimNames.Sub,   user.UserId.ToString()),
                 new(JwtRegisteredClaimNames.Email, user.Email),
                 new("profile", user.ProfileName),
+                // se tiver permissões/roles, adicione aqui:
+                // new("perm", "users.read"),
             };
-            // Se tiver permissões em outro lugar, adicione-as aqui:
-            // claims.AddRange(permissions.Select(p => new Claim("perm", p)));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_opt.SigningKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var token = new JwtSecurityToken(
+            var jwt = new JwtSecurityToken(
                 issuer: _opt.Issuer,
                 audience: _opt.Audience,
                 claims: claims,
-                notBefore: now,
-                expires: expires,
-                signingCredentials: creds);
+                notBefore: now.UtcDateTime,
+                expires: expires.UtcDateTime,
+                signingCredentials: creds
+            );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwt);
+            return new AppServ.AccessToken(tokenString, expires);
         }
-
-        public string CreateRefreshToken(UserAccount user)
-            => Convert.ToBase64String(Guid.NewGuid().ToByteArray()) + "-" + user.UserId.ToString("N");
     }
 }

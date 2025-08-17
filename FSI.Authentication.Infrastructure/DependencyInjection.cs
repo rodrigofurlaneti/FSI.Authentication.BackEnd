@@ -7,6 +7,12 @@ using FSI.Authentication.Infrastructure.Repositories;
 using FSI.Authentication.Infrastructure.Services;
 using FSI.Authentication.Infrastructure.Outbox;
 using FSI.Authentication.Infrastructure.Security;
+using AppRepos = FSI.Authentication.Application.Interfaces.Repositories;
+using AppServ = FSI.Authentication.Application.Interfaces.Services;
+using AppMess = FSI.Authentication.Application.Interfaces.Messaging;
+using DomServ = FSI.Authentication.Domain.Interfaces; // se ainda houver algum serviço de domínio
+using FSI.Authentication.Domain.Abstractions.Messaging;
+
 
 namespace FSI.Authentication.Infrastructure;
 
@@ -21,8 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Repositórios/Serviços
-        services.AddScoped<IUserAccountRepository, UserAccountRepository>();
-        services.AddScoped<IUserAccountService, UserAccountService>();
+        services.AddScoped<AppRepos.IUserAccountRepository, UserAccountRepository>();
 
         return services;
     }
@@ -31,15 +36,23 @@ public static class DependencyInjection
     {
         services.AddScoped<IOutbox, SqlOutbox>();
         services.AddScoped<IEventPublisher, EventPublisher>();
-        services.AddSingleton<IMessageBus, SqlMessageBus>();
+        services.AddSingleton<AppMess.IMessageBus, SqlMessageBus>();
         return services;
     }
 
     public static IServiceCollection AddSecurity(this IServiceCollection services, JwtOptions jwtOptions)
     {
-        services.AddSingleton(jwtOptions);                  // opções concretas
-        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
-        services.AddSingleton<ITokenProvider, JwtTokenProvider>();
+        services.AddSingleton<AppServ.IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton(jwtOptions);
+        services.AddSingleton<AppServ.ITokenProvider, JwtTokenProvider>();
+
+        services.AddScoped<UserAccountService>();
+
+        services.AddScoped<FSI.Authentication.Domain.Services.IAuthDomainService>(
+            sp => sp.GetRequiredService<UserAccountService>());
+
+        services.AddScoped<FSI.Authentication.Domain.Interfaces.IUserAccountService>(
+            sp => sp.GetRequiredService<UserAccountService>());
         return services;
     }
 }

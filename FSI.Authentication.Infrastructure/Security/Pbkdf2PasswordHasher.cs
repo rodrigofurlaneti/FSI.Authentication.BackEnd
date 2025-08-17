@@ -1,4 +1,4 @@
-﻿using FSI.Authentication.Domain.Abstractions.Security;
+﻿using AppServ = FSI.Authentication.Application.Interfaces.Services;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -8,7 +8,7 @@ namespace FSI.Authentication.Infrastructure.Security
     /// Implementação simples baseada em PBKDF2 (sem pacote externo).
     /// Ajuste parâmetros conforme sua política de segurança.
     /// </summary>
-    public sealed class Pbkdf2PasswordHasher : IPasswordHasher
+    public sealed class Pbkdf2PasswordHasher : AppServ.IPasswordHasher
     {
         private const int Iterations = 100_000;
         private const int SaltSize = 16;

@@ -5,6 +5,7 @@ namespace FSI.Authentication.Domain.Abstractions.Messaging
 {
     public interface IMessageBus
     {
-        Task PublishAsync(object message, CancellationToken ct = default);
+        Task PublishAsync<T>(T message, CancellationToken ct) where T : class;
+
     }
 }

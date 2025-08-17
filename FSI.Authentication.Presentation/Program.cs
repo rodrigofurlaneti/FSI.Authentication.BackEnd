@@ -5,6 +5,12 @@ using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.BuildServiceProvider(new ServiceProviderOptions
+{
+    ValidateOnBuild = true,
+    ValidateScopes = true
+});
+
 // Usa a classe Startup para organizar DI e Pipeline
 var startup = new Startup(builder.Configuration);
 startup.ConfigureServices(builder.Services);

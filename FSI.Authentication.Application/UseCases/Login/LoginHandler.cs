@@ -5,6 +5,8 @@ using FSI.Authentication.Application.Interfaces.Repositories;
 using FSI.Authentication.Application.Interfaces.Services;
 using FSI.Authentication.Domain.Abstractions;
 using FSI.Authentication.Domain.Services;
+using AppRepos = FSI.Authentication.Application.Interfaces.Repositories;
+using AppServ = FSI.Authentication.Application.Interfaces.Services;
 
 namespace FSI.Authentication.Application.UseCases.Login
 {
@@ -36,18 +38,13 @@ namespace FSI.Authentication.Application.UseCases.Login
 
     public sealed class LoginHandler
     {
-        private readonly IUserAccountRepository _users;
-        private readonly IPasswordHasher _hasher;
-        private readonly ITokenProvider _tokens;
+        private readonly AppRepos.IUserAccountRepository _users;
+        private readonly AppServ.IPasswordHasher _hasher;
+        private readonly AppServ.ITokenProvider _tokens;
         private readonly IAuthDomainService _domain;
         private readonly IClock _clock;
 
-        public LoginHandler(
-            IUserAccountRepository users,
-            IPasswordHasher hasher,
-            ITokenProvider tokens,
-            IAuthDomainService domain,
-            IClock clock)
+        public LoginHandler(AppRepos.IUserAccountRepository users, AppServ.IPasswordHasher hasher, AppServ.ITokenProvider tokens, IAuthDomainService domain, IClock clock)
         {
             _users = users;
             _hasher = hasher;

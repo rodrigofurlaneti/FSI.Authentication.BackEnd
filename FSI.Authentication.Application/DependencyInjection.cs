@@ -1,11 +1,18 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using FSI.Authentication.Application.Services;
+using FSI.Authentication.Application.UseCases.ChangePassword;
+using FSI.Authentication.Application.UseCases.Login;
+using FSI.Authentication.Application.UseCases.RegisterUser;
+using Microsoft.Extensions.DependencyInjection;
 namespace FSI.Authentication.Application;
 
 public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // Handlers
+        services.AddScoped<AuthenticationAppService>();
+        services.AddScoped<LoginHandler>();
+        services.AddScoped<RegisterUserHandler>();
+        services.AddScoped<ChangePasswordHandler>();
         return services;
     }
 }

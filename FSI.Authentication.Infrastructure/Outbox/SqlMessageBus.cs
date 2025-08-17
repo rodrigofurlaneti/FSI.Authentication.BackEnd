@@ -1,17 +1,7 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using FSI.Authentication.Domain.Abstractions.Messaging; // IOutbox, IMessageBus, IEventPublisher
+﻿using AppMess = FSI.Authentication.Application.Interfaces.Messaging;
 
-namespace FSI.Authentication.Infrastructure.Outbox
+public sealed class SqlMessageBus : AppMess.IMessageBus
 {
-    public sealed class SqlMessageBus : IMessageBus
-    {
-        public Task PublishAsync<T>(T message, CancellationToken ct) where T : class
-            => PublishAsync((object)message!, ct);
-
-        public Task PublishAsync(object message, CancellationToken ct)
-        {
-            return Task.CompletedTask;
-        }
-    }
+    public Task PublishAsync<T>(T message, CancellationToken ct)
+        => Task.CompletedTask; // implemente seu broker real aqui
 }

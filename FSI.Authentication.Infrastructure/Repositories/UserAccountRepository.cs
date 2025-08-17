@@ -1,36 +1,28 @@
-﻿using FSI.Authentication.Domain.Aggregates;   // UserAccount
-using FSI.Authentication.Domain.Interfaces;   // IUserAccountRepository  (novo using)
+﻿using FSI.Authentication.Domain.Aggregates;
+using FSI.Authentication.Domain.ValueObjects;           
 using FSI.Authentication.Infrastructure.Persistence;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using AppRepos = FSI.Authentication.Application.Interfaces.Repositories;
 
 namespace FSI.Authentication.Infrastructure.Repositories
 {
-    /// <summary>
-    /// Repositório baseado em procedures:
-    /// - usp_User_GetByEmail @Email
-    /// - usp_User_GetById    @UserId
-    /// - usp_User_Insert     (...campos)
-    /// - usp_User_Update     (...campos)
-    /// Ajuste os nomes/colunas conforme seu banco.
-    /// </summary>
-    public sealed class UserAccountRepository : IUserAccountRepository
+    public sealed class UserAccountRepository : AppRepos.IUserAccountRepository
     {
         private readonly DbSession _session;
         public UserAccountRepository(DbSession session) => _session = session;
 
-        public async Task<UserAccount?> GetByEmailAsync(string email, CancellationToken ct = default)
+        public async Task<UserAccount?> GetByEmailAsync(Email email, CancellationToken ct = default) // << assinatura igual à interface
         {
             using var cmd = new SqlCommand("dbo.usp_User_GetByEmail", _session.Connection, _session.Transaction)
             { CommandType = CommandType.StoredProcedure };
 
-            cmd.Parameters.Add(new SqlParameter("@Email", SqlDbType.NVarChar, 256) { Value = email });
+            cmd.Parameters.Add(new SqlParameter("@Email", SqlDbType.NVarChar, 256) { Value = email.Value }); // << usa o VO
 
             using var rdr = await cmd.ExecuteReaderAsync(ct);
             if (!await rdr.ReadAsync(ct)) return null;
 
-            var user = MapReaderToUser(rdr);
-            return user;
+            return MapReaderToUser(rdr);
         }
 
         public async Task<UserAccount?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -43,8 +35,7 @@ namespace FSI.Authentication.Infrastructure.Repositories
             using var rdr = await cmd.ExecuteReaderAsync(ct);
             if (!await rdr.ReadAsync(ct)) return null;
 
-            var user = MapReaderToUser(rdr);
-            return user;
+            return MapReaderToUser(rdr);
         }
 
         public async Task AddAsync(UserAccount user, CancellationToken ct = default)
@@ -83,14 +74,8 @@ namespace FSI.Authentication.Infrastructure.Repositories
             await cmd.ExecuteNonQueryAsync(ct);
         }
 
-        public Task SaveChangesAsync(CancellationToken ct = default)
-        {
-            // Se você usar transação externa no DbSession, faça commit aqui.
-            // Como não temos contexto do seu DbSession, deixo no-op.
-            return Task.CompletedTask;
-        }
+        public Task SaveChangesAsync(CancellationToken ct = default) => Task.CompletedTask;
 
-        // ---------- Helpers ----------
         private static UserAccount MapReaderToUser(SqlDataReader rdr)
         {
             var userId = rdr.GetGuid(rdr.GetOrdinal("UserId"));
@@ -105,15 +90,13 @@ namespace FSI.Authentication.Infrastructure.Repositories
             var ordLock = rdr.GetOrdinal("LockoutEndUtc");
             if (ordLock >= 0 && !rdr.IsDBNull(ordLock))
             {
-                // Assume que o DateTime no banco está em UTC
                 var dt = rdr.GetDateTime(ordLock);
                 lockoutEnd = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
             }
 
             var profileName = rdr.GetString(rdr.GetOrdinal("ProfileName"));
 
-            // Usa o construtor do seu domínio atual
-            var user = new UserAccount(
+            return new UserAccount(
                 userId,
                 email,
                 firstName,
@@ -124,8 +107,6 @@ namespace FSI.Authentication.Infrastructure.Repositories
                 failedCount,
                 lockoutEnd
             );
-
-            return user;
         }
     }
 }
