@@ -1,10 +1,14 @@
-﻿using FSI.Authentication.Application.Exceptions;
-using Microsoft.AspNetCore.Http;      // <- faltava
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;     // <- faltava
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using FSI.Authentication.Application.Exceptions;
+
+// 👇 Alias para evitar conflito com algum namespace "ProblemDetails"
+using MvcProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace FSI.Authentication.Presentation.Middleware
 {
@@ -31,9 +35,8 @@ namespace FSI.Authentication.Presentation.Middleware
             }
         }
 
-        private static ProblemDetails MapToProblemDetails(HttpContext ctx, Exception ex)
+        private static MvcProblemDetails MapToProblemDetails(HttpContext ctx, Exception ex)
         {
-            // RFC 7807 base
             var type = "https://httpstatuses.com/500";
             var title = "Erro interno";
             var status = (int)HttpStatusCode.InternalServerError;
@@ -52,7 +55,7 @@ namespace FSI.Authentication.Presentation.Middleware
 
             var correlationId = ctx.Items.TryGetValue("X-Correlation-Id", out var cid) ? cid?.ToString() : null;
 
-            return new ProblemDetails
+            return new MvcProblemDetails
             {
                 Type = type,
                 Title = title,
@@ -68,7 +71,7 @@ namespace FSI.Authentication.Presentation.Middleware
 
     internal static class ProblemDetailsExtensions
     {
-        public static ProblemDetails WithExtensions(this ProblemDetails p, IDictionary<string, object?> ext)
+        public static MvcProblemDetails WithExtensions(this MvcProblemDetails p, IDictionary<string, object?> ext)
         {
             foreach (var kv in ext) p.Extensions[kv.Key] = kv.Value;
             return p;
