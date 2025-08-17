@@ -7,11 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Messaging\" />
-    <Folder Include="Migrations\" />
-    <Folder Include="Persistence\" />
-    <Folder Include="Outbox\" />
-    <Folder Include="Repositories\" />
+    <Compile Include="Migrations\003_MassDataDefault.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FSI.Authentication.Application\FSI.Authentication.Application.csproj" />
+    <ProjectReference Include="..\FSI.Authentication.Domain\FSI.Authentication.Domain.csproj" />
   </ItemGroup>
 
 </Project>
