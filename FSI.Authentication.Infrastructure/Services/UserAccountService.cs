@@ -28,7 +28,6 @@ namespace FSI.Authentication.Infrastructure.Services
             return Task.CompletedTask;
         }
 
-        public bool CanSignIn(UserAccount user, IClock clock, out string? reason)
-    => user.CanSignIn(clock, out reason);
+        public bool CanSignIn(UserAccount user, IClock clock, out string? reason) => user.CanSignIn(clock, out reason);
     }
 }

@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using FSI.Authentication.Application.Exceptions;
-
-// 👇 Alias para evitar conflito com algum namespace "ProblemDetails"
 using MvcProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace FSI.Authentication.Presentation.Middleware

@@ -24,6 +24,8 @@ namespace FSI.Authentication.Infrastructure.Security
                 new(JwtRegisteredClaimNames.Sub,   user.UserId.ToString()),
                 new(JwtRegisteredClaimNames.Email, user.Email),
                 new("profile", user.ProfileName),
+                new("firstname", user.FirstName),
+                new("lastname", user.LastName)
                 // se tiver permissões/roles, adicione aqui:
                 // new("perm", "users.read"),
             };

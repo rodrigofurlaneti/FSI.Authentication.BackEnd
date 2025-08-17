@@ -21,10 +21,12 @@ namespace FSI.Authentication.Application.UseCases.Login
         public Guid? UserId { get; init; }
         public string? Email { get; init; }
         public string? ProfileName { get; init; }
+        public string? FirstName { get; init; }
+        public string? LastName { get; init; }
 
         public static LoginResult Fail(string error) => new() { IsSuccessful = false, Error = error };
 
-        public static LoginResult Success(string token, DateTimeOffset expires, Guid userId, string email, string profile)
+        public static LoginResult Success(string token, DateTimeOffset expires, Guid userId, string email, string profile, string fisrtName, string lastName)
             => new()
             {
                 IsSuccessful = true,
@@ -32,7 +34,9 @@ namespace FSI.Authentication.Application.UseCases.Login
                 ExpiresAtUtc = expires,
                 UserId = userId,
                 Email = email,
-                ProfileName = profile
+                ProfileName = profile,
+                FirstName = fisrtName,
+                LastName = lastName
             };
     }
 
@@ -74,7 +78,7 @@ namespace FSI.Authentication.Application.UseCases.Login
             await _users.UpdateAsync(user, ct);
 
             var token = _tokens.CreateToken(user);
-            return LoginResult.Success(token.Token, token.ExpiresAtUtc, user.UserId, user.Email, user.ProfileName);
+            return LoginResult.Success(token.Token, token.ExpiresAtUtc, user.UserId, user.Email, user.ProfileName, user.FirstName, user.LastName);
         }
     }
 }
