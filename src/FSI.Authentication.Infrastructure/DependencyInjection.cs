@@ -25,7 +25,7 @@ public static class DependencyInjection
         services.AddSingleton<ISqlConnectionFactory>(_ => new SqlConnectionFactory(connectionString));
         services.AddScoped<DbSession>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-
+        services.AddScoped<AppRepos.IGeoLogRepository, GeoLogRepository>();
         // Repositórios/Serviços
         services.AddScoped<AppRepos.IUserAccountRepository, UserAccountRepository>();
 

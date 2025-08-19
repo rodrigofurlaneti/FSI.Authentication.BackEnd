@@ -26,6 +26,19 @@ namespace FSI.Authentication.Presentation
             var jwt = _configuration.GetSection("Jwt").Get<JwtOptions>()
                      ?? new JwtOptions { SigningKey = "troque-esta-chave", Issuer = "FSI.Auth", Audience = "FSI.API", ExpirationMinutes = 60 };
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy("GeoCors", builder =>
+                {
+                    builder
+                        .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // frontend local
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                    // .AllowCredentials() se precisar enviar cookies
+                });
+            });
+
+
             services
                 .AddPresentationDefaults()
                 .AddDomain()
@@ -49,6 +62,7 @@ namespace FSI.Authentication.Presentation
 
             app.UseHttpsRedirection();
             app.UseRouting();
+            app.UseCors("GeoCors");
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseEndpoints(e => e.MapControllers());

@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<LoginHandler>();
         services.AddScoped<RegisterUserHandler>();
         services.AddScoped<ChangePasswordHandler>();
+        services.AddScoped<GeoLoggingAppService>();
         return services;
     }
 }
