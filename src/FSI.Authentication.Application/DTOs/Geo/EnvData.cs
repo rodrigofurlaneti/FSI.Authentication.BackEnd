@@ -16,6 +16,16 @@ namespace FSI.Authentication.Application.DTOs.Geo
         public string? OSVersion { get; init; }
         [JsonPropertyName("architecture")]
         public string? Architecture { get; init; }
+        [JsonPropertyName("deviceType")]
+        public string? DeviceType { get; init; }
+        [JsonPropertyName("deviceModel")]
+        public string? DeviceModel { get; init; }
+        [JsonPropertyName("touchPoints")]
+        public int? TouchPoints { get; init; }
+        [JsonPropertyName("isBot")]
+        public bool? IsBot { get; init; }
+        [JsonPropertyName("botName")]
+        public string? BotName { get; init; }
         [JsonPropertyName("language")]
         public string? Language { get; init; }
         [JsonPropertyName("languages")]
