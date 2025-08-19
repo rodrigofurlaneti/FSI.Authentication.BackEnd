@@ -17,11 +17,25 @@ public sealed class GeolocationController : ControllerBase
 
     [HttpPost]
     [AllowAnonymous]
-    [ProducesResponseType(204)]
+    [Consumes("application/json")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status415UnsupportedMediaType)]
     public async Task<IActionResult> Post([FromBody] ClientContextPayload payload, CancellationToken ct)
     {
         if (payload is null) return BadRequest("Empty payload.");
+
+        var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var xff = Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        var ua = Request.Headers["User-Agent"].ToString();
+
         await _app.LogAsync(payload, ct);
+
         return NoContent();
     }
+
+    // Opcional: facilita depuração de CORS/preflight
+    [HttpOptions]
+    [AllowAnonymous]
+    public IActionResult Options() => Ok();
 }

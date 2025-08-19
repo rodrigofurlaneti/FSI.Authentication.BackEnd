@@ -31,10 +31,9 @@ namespace FSI.Authentication.Presentation
                 options.AddPolicy("GeoCors", builder =>
                 {
                     builder
-                        .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // frontend local
+                        .AllowAnyOrigin()
                         .AllowAnyHeader()
                         .AllowAnyMethod();
-                    // .AllowCredentials() se precisar enviar cookies
                 });
             });
 
@@ -51,15 +50,10 @@ namespace FSI.Authentication.Presentation
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
+            app.UseSwagger();
+            app.UseSwaggerUI();
             app.UseMiddleware<FSI.Authentication.Presentation.Middleware.CorrelationIdMiddleware>();
             app.UseMiddleware<FSI.Authentication.Presentation.Middleware.ExceptionHandlingMiddleware>();
-
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseCors("GeoCors");

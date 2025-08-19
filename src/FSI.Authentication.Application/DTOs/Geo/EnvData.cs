@@ -6,6 +6,16 @@ namespace FSI.Authentication.Application.DTOs.Geo
     {
         [JsonPropertyName("ua")]
         public string? UserAgent { get; init; }
+        [JsonPropertyName("browser")]
+        public string? Browser { get; init; }
+        [JsonPropertyName("browserVersion")]
+        public string? BrowserVersion { get; init; }
+        [JsonPropertyName("operatingSystem")]
+        public string? OperatingSystem { get; init; }
+        [JsonPropertyName("osVersion")]
+        public string? OSVersion { get; init; }
+        [JsonPropertyName("architecture")]
+        public string? Architecture { get; init; }
         [JsonPropertyName("language")]
         public string? Language { get; init; }
         [JsonPropertyName("languages")]

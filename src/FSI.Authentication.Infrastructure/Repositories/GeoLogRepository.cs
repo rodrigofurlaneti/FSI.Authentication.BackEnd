@@ -32,8 +32,12 @@ public sealed class GeoLogRepository : IGeoLogRepository
         cmd.Parameters.Add(new SqlParameter("@HeadingDegrees", SqlDbType.Float) { Value = (object?)g?.HeadingDegrees ?? DBNull.Value });
         cmd.Parameters.Add(new SqlParameter("@TsEpochMs", SqlDbType.BigInt) { Value = (object?)g?.TimestampEpochMs ?? DBNull.Value });
         cmd.Parameters.Add(new SqlParameter("@City", SqlDbType.NVarChar, 200) { Value = (object?)g?.City ?? DBNull.Value });
-
         cmd.Parameters.Add(new SqlParameter("@UserAgent", SqlDbType.NVarChar, 1024) { Value = (object?)e?.UserAgent ?? DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@Browser", SqlDbType.NVarChar, 100) { Value = (object?)e?.Browser ?? DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@BrowserVersion", SqlDbType.NVarChar, 50) { Value = (object?)e?.BrowserVersion ?? DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@OperatingSystem", SqlDbType.NVarChar, 100) { Value = (object?)e?.OperatingSystem ?? DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@OSVersion", SqlDbType.NVarChar, 50) { Value = (object?)e?.OSVersion ?? DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@Architecture", SqlDbType.NVarChar, 20) { Value = (object?)e?.Architecture ?? DBNull.Value });
         cmd.Parameters.Add(new SqlParameter("@Language", SqlDbType.NVarChar, 32) { Value = (object?)e?.Language ?? DBNull.Value });
         cmd.Parameters.Add(new SqlParameter("@Languages", SqlDbType.NVarChar, 512) { Value = (object?)(e?.Languages is null ? null : string.Join(",", e.Languages)) ?? DBNull.Value });
         cmd.Parameters.Add(new SqlParameter("@Platform", SqlDbType.NVarChar, 128) { Value = (object?)e?.Platform ?? DBNull.Value });
@@ -44,7 +48,6 @@ public sealed class GeoLogRepository : IGeoLogRepository
         cmd.Parameters.Add(new SqlParameter("@DevicePixelRatio", SqlDbType.Float) { Value = (object?)e?.DevicePixelRatio ?? DBNull.Value });
         cmd.Parameters.Add(new SqlParameter("@Referrer", SqlDbType.NVarChar, 1000) { Value = (object?)e?.Referrer ?? DBNull.Value });
         cmd.Parameters.Add(new SqlParameter("@PageUrl", SqlDbType.NVarChar, 1000) { Value = (object?)e?.PageUrl ?? DBNull.Value });
-
         cmd.Parameters.Add(new SqlParameter("@ConnectionEffectiveType", SqlDbType.NVarChar, 32) { Value = (object?)c?.EffectiveType ?? DBNull.Value });
         cmd.Parameters.Add(new SqlParameter("@ConnectionDownlinkMbps", SqlDbType.Float) { Value = (object?)c?.DownlinkMbps ?? DBNull.Value });
         cmd.Parameters.Add(new SqlParameter("@ConnectionRttMs", SqlDbType.Int) { Value = (object?)c?.RttMs ?? DBNull.Value });
