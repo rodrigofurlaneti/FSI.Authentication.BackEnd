@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseWindowsService();
+// REMOVER estas linhas no cenário IIS in-process:
+//builder.Host.UseWindowsService();
 
 builder.Host.UseDefaultServiceProvider(o =>
 {
@@ -15,7 +16,8 @@ builder.Host.UseDefaultServiceProvider(o =>
     o.ValidateScopes = true;
 });
 
-builder.WebHost.UseUrls("http://localhost:5000");
+// REMOVER estas linhas no cenário IIS in-process:
+//builder.WebHost.UseUrls("http://localhost:5000");
 
 builder.Logging.AddEventLog();
 

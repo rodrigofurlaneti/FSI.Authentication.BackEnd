@@ -7,8 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Auth\" />
-    <Folder Include="Admin\" />
+    <Compile Remove="Admin\**" />
+    <Compile Remove="Auth\**" />
+    <Content Remove="Admin\**" />
+    <Content Remove="Auth\**" />
+    <EmbeddedResource Remove="Admin\**" />
+    <EmbeddedResource Remove="Auth\**" />
+    <None Remove="Admin\**" />
+    <None Remove="Auth\**" />
   </ItemGroup>
 
   <ItemGroup>

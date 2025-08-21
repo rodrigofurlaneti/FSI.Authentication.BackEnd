@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 
 // Nossas extensions:
 using FSI.Authentication.Domain;
@@ -49,7 +50,14 @@ namespace FSI.Authentication.Presentation
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
+        {    // 1) Respeitar cabeçalhos do proxy (ARR/IIS)
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+                // Opcional (endurecer):
+                // KnownProxies = { System.Net.IPAddress.Loopback } // 127.0.0.1
+            });
+
             app.UseSwagger();
             app.UseSwaggerUI();
             app.UseMiddleware<FSI.Authentication.Presentation.Middleware.CorrelationIdMiddleware>();
