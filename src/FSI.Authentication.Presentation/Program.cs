@@ -2,16 +2,24 @@ using FSI.Authentication.Presentation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.WindowsServices; // <- pacote acima
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.BuildServiceProvider(new ServiceProviderOptions
+builder.Host.UseWindowsService();
+
+builder.Host.UseDefaultServiceProvider(o =>
 {
-    ValidateOnBuild = true,
-    ValidateScopes = true
+    o.ValidateOnBuild = true;
+    o.ValidateScopes = true;
 });
 
-// Usa a classe Startup para organizar DI e Pipeline
+builder.WebHost.UseUrls("http://localhost:5000");
+
+builder.Logging.AddEventLog();
+
+// Usa a classe Startup para DI/pipeline
 var startup = new Startup(builder.Configuration);
 startup.ConfigureServices(builder.Services);
 

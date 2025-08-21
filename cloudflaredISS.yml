@@ -1,0 +1,7 @@
+tunnel: d13d2955-957f-461b-a95f-9a44e90f83c9
+credentials-file: C:\Users\ADM\.cloudflared\d13d2955-957f-461b-a95f-9a44e90f83c9.json
+
+ingress:
+  - hostname: api.furlaneti.com
+    service: http://127.0.0.1:5000
+  - service: http_status:404

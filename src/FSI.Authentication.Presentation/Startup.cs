@@ -54,7 +54,8 @@ namespace FSI.Authentication.Presentation
             app.UseSwaggerUI();
             app.UseMiddleware<FSI.Authentication.Presentation.Middleware.CorrelationIdMiddleware>();
             app.UseMiddleware<FSI.Authentication.Presentation.Middleware.ExceptionHandlingMiddleware>();
-            app.UseHttpsRedirection();
+            if (!env.IsDevelopment())
+                app.UseHttpsRedirection(); // só em produção
             app.UseRouting();
             app.UseCors("GeoCors");
             app.UseAuthentication();
