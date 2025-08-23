@@ -11,9 +11,12 @@ namespace FSI.Authentication.Presentation.Controllers;
 [Route("api/[controller]")]
 public sealed class GeolocationController : ControllerBase
 {
-    private readonly GeoLoggingAppService _app;
+    private readonly GeoLoggingAppService _geoLoggingAppService;
 
-    public GeolocationController(GeoLoggingAppService app) => _app = app;
+    public GeolocationController(GeoLoggingAppService geoLoggingAppService)
+    {
+        _geoLoggingAppService = geoLoggingAppService;
+    } 
 
     [HttpPost]
     [AllowAnonymous]
@@ -29,7 +32,7 @@ public sealed class GeolocationController : ControllerBase
         var xff = Request.Headers["X-Forwarded-For"].FirstOrDefault();
         var ua = Request.Headers["User-Agent"].ToString();
 
-        await _app.LogAsync(payload, ct);
+        await _geoLoggingAppService.LogAsync(payload, ct);
 
         return NoContent();
     }

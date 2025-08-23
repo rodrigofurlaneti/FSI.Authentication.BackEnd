@@ -11,13 +11,12 @@ namespace FSI.Authentication.Infrastructure.Repositories;
 
 public sealed class GeoLogRepository : IGeoLogRepository
 {
-    private readonly DbSession _session;
-    public GeoLogRepository(DbSession session) => _session = session;
+    private readonly DbSession _dbSession;
+    public GeoLogRepository(DbSession dbSession) => _dbSession = dbSession;
 
-    public async Task InsertAsync(ClientContextPayload payload, CancellationToken ct)
+    public async Task<long> InsertAsync(ClientContextPayload payload, CancellationToken ct)
     {
-        // 1) Corrigir o nome da SP
-        using var cmd = new SqlCommand("dbo.usp_GeoClientLog_Insert", _session.Connection, _session.Transaction)
+        using var cmd = new SqlCommand("dbo.usp_GeoClientLog_Insert", _dbSession.Connection, _dbSession.Transaction)
         { CommandType = CommandType.StoredProcedure };
 
         var g = payload.Geo;
@@ -68,9 +67,34 @@ public sealed class GeoLogRepository : IGeoLogRepository
 
         // 3) Evitar NRE
         cmd.Parameters.Add(new SqlParameter("@BotName", SqlDbType.NVarChar, 64) { Value = (object?)e?.BotName ?? DBNull.Value });
-
         cmd.Parameters.Add(new SqlParameter("@Error", SqlDbType.NVarChar, 4000) { Value = (object?)payload.Error ?? DBNull.Value });
 
+        // OUTPUT param para capturar o Id
+        var pId = new SqlParameter("@NewId", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pId);
+
+        await cmd.ExecuteNonQueryAsync(ct);
+        return (long)pId.Value;
+    }
+
+    public async Task InsertEnrichmentAsync(long geoClientLogId, GeoEnrichmentDto e, CancellationToken ct)
+    {
+        using var cmd = new SqlCommand("dbo.usp_GeoClientLogEnrichment_Insert", _dbSession.Connection, _dbSession.Transaction)
+        { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@GeoClientLogId", geoClientLogId);
+        cmd.Parameters.AddWithValue("@Granularity", (object?)e.Granularity ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Country", (object?)e.Country ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@UF", (object?)e.UF ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Municipio", (object?)e.Municipio ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CodigoMunicipioIBGE", (object?)e.CodigoMunicipioIBGE ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Bairro", (object?)e.Bairro ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Logradouro", (object?)e.Logradouro ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Numero", (object?)e.Numero ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CEP", (object?)e.CEP ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@TimezoneId", (object?)e.TimezoneId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@GeoConfidence", (object?)e.Confidence ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@GeoSource", e.Sources is { Length: > 0 } s ? string.Join(";", s) : (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@GeoAttribution", (object?)e.Attribution ?? DBNull.Value);
         await cmd.ExecuteNonQueryAsync(ct);
     }
 }

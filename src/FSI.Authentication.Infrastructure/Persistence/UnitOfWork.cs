@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FSI.Authentication.Application.Interfaces;   
 
 namespace FSI.Authentication.Infrastructure.Persistence
 {
@@ -11,13 +7,13 @@ namespace FSI.Authentication.Infrastructure.Persistence
         private readonly DbSession _session;
         public UnitOfWork(DbSession session) => _session = session;
 
-        public async Task<IDisposable> BeginAsync(CancellationToken ct)
+        public async Task<IUnitOfWorkScope> BeginAsync(CancellationToken ct = default)
         {
             await _session.BeginAsync(ct);
             return new Scope(_session, ct);
         }
 
-        private sealed class Scope : IDisposable
+        private sealed class Scope : IUnitOfWorkScope
         {
             private readonly DbSession _s;
             private readonly CancellationToken _ct;
@@ -25,16 +21,23 @@ namespace FSI.Authentication.Infrastructure.Persistence
 
             public Scope(DbSession s, CancellationToken ct) { _s = s; _ct = ct; }
 
+            public async Task CommitAsync()
+            {
+                await _s.CommitAsync(_ct);
+                _completed = true;
+            }
+
             public void Dispose()
             {
                 if (!_completed)
-                {
-                    // best-effort rollback
                     _s.RollbackAsync(_ct).GetAwaiter().GetResult();
-                }
             }
 
-            public async Task CommitAsync() { await _s.CommitAsync(_ct); _completed = true; }
+            public async ValueTask DisposeAsync()
+            {
+                if (!_completed)
+                    await _s.RollbackAsync(_ct);
+            }
         }
     }
 }

@@ -1,16 +1,17 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using FSI.Authentication.Application;
+using FSI.Authentication.Application.Interfaces.Services;
+using FSI.Authentication.Application.Services;
+// Nossas extensions:
+using FSI.Authentication.Domain;
+using FSI.Authentication.Infrastructure;
+using FSI.Authentication.Infrastructure.Security;
+using FSI.Authentication.Presentation.Config;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.HttpOverrides;
-
-// Nossas extensions:
-using FSI.Authentication.Domain;
-using FSI.Authentication.Application;
-using FSI.Authentication.Infrastructure;
-using FSI.Authentication.Presentation.Config;
-using FSI.Authentication.Infrastructure.Security;
 
 namespace FSI.Authentication.Presentation
 {
@@ -47,6 +48,9 @@ namespace FSI.Authentication.Presentation
                 .AddMessaging()
                 .AddSecurity(jwt)
                 .AddJwtAuthentication(jwt);
+
+            services.AddHttpClient<IGeoEnricher, GeoEnricherService>(c => c.Timeout = TimeSpan.FromSeconds(6));
+
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

@@ -1,4 +1,6 @@
-﻿using FSI.Authentication.Application.Services;
+﻿using FSI.Authentication.Application.Interfaces;
+using FSI.Authentication.Application.Interfaces.Services;
+using FSI.Authentication.Application.Services;
 using FSI.Authentication.Application.UseCases.ChangePassword;
 using FSI.Authentication.Application.UseCases.Login;
 using FSI.Authentication.Application.UseCases.RegisterUser;

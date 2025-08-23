@@ -6,5 +6,6 @@ namespace FSI.Authentication.Application.Interfaces.Repositories;
 
 public interface IGeoLogRepository
 {
-    Task InsertAsync(ClientContextPayload payload, CancellationToken ct);
+    Task<long> InsertAsync(ClientContextPayload payload, CancellationToken ct);
+    Task InsertEnrichmentAsync(long geoClientLogId, GeoEnrichmentDto geoEnrichmentDto, CancellationToken ct);
 }
