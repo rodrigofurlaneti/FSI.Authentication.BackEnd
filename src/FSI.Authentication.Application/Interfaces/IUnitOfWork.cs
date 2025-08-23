@@ -2,6 +2,6 @@
 {
     public interface IUnitOfWork
     {
-        Task<IUnitOfWorkScope> BeginAsync(CancellationToken ct = default);
+        Task<IUnitOfWorkTransaction> BeginAsync(CancellationToken ct = default);
     }
 }

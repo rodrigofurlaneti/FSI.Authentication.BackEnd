@@ -66,6 +66,8 @@ namespace FSI.Authentication.Presentation
             app.UseSwaggerUI();
             app.UseMiddleware<FSI.Authentication.Presentation.Middleware.CorrelationIdMiddleware>();
             app.UseMiddleware<FSI.Authentication.Presentation.Middleware.ExceptionHandlingMiddleware>();
+            app.UseMiddleware<FSI.Authentication.Presentation.Middleware.DataAccessExceptionMiddleware>();
+
             if (!env.IsDevelopment())
                 app.UseHttpsRedirection(); // só em produção
             app.UseRouting();

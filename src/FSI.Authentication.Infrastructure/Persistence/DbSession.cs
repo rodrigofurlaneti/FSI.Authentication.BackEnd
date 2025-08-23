@@ -1,34 +1,30 @@
-﻿using System.Data;
+﻿namespace FSI.Authentication.Infrastructure.Persistence;
+
 using Microsoft.Data.SqlClient;
+using System.Data;
 
-namespace FSI.Authentication.Infrastructure.Persistence
+public sealed class DbSession : IAsyncDisposable
 {
-    public sealed class DbSession : IDisposable
+    public SqlConnection Connection { get; }
+    public SqlTransaction? Transaction { get; internal set; }
+
+    public DbSession(ISqlConnectionFactory factory)
     {
-        public SqlConnection Connection { get; }
-        public SqlTransaction? Transaction { get; private set; }
+        Connection = factory.CreateOpenConnection(); 
+    }
 
-        public DbSession(ISqlConnectionFactory factory)
+    public async ValueTask DisposeAsync()
+    {
+        if (Transaction is not null)
         {
-            Connection = factory.CreateOpenConnection();
+            try { await Transaction.RollbackAsync(); } catch { }
+            await Transaction.DisposeAsync();
+            Transaction = null;
         }
 
-        public async Task BeginAsync(CancellationToken ct)
-        {
-            if (Transaction is null)
-                Transaction = (SqlTransaction)await Connection.BeginTransactionAsync(ct);
-        }
+        if (Connection.State != ConnectionState.Closed)
+            await Connection.CloseAsync();
 
-        public Task CommitAsync(CancellationToken ct)
-            => Transaction?.CommitAsync(ct) ?? Task.CompletedTask;
-
-        public Task RollbackAsync(CancellationToken ct)
-            => Transaction?.RollbackAsync(ct) ?? Task.CompletedTask;
-
-        public void Dispose()
-        {
-            Transaction?.Dispose();
-            Connection.Dispose();
-        }
+        await Connection.DisposeAsync();
     }
 }
