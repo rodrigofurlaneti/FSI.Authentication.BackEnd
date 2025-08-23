@@ -1,0 +1,1 @@
+## dotnet publish -c Release -o "C:\sites\api.furlaneti.com" /p:EnvironmentName=Production
