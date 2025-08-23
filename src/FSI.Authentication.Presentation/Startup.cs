@@ -33,7 +33,7 @@ namespace FSI.Authentication.Presentation
                 options.AddPolicy("GeoCors", builder =>
                 {
                     builder
-                        .AllowAnyOrigin()
+                        .WithOrigins("https://www.furlaneti.com", "https://furlaneti.com")
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
