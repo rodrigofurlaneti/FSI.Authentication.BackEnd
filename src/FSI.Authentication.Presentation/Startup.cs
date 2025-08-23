@@ -33,9 +33,11 @@ namespace FSI.Authentication.Presentation
                 options.AddPolicy("GeoCors", builder =>
                 {
                     builder
-                        .WithOrigins("https://www.furlaneti.com", "https://furlaneti.com")
+                        .WithOrigins("https://www.furlaneti.com/" , "https://www.furlaneti.com", "https://furlaneti.com")
                         .AllowAnyHeader()
-                        .AllowAnyMethod();
+                        .AllowAnyMethod()
+                        .SetIsOriginAllowedToAllowWildcardSubdomains()
+                        .SetPreflightMaxAge(TimeSpan.FromHours(1));
                 });
             });
 
@@ -74,7 +76,10 @@ namespace FSI.Authentication.Presentation
             app.UseCors("GeoCors");
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseEndpoints(e => e.MapControllers());
+            app.UseEndpoints(e =>
+            {
+                e.MapControllers();
+            });
         }
     }
 }
