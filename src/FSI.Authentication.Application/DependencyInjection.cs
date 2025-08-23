@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<RegisterUserHandler>();
         services.AddScoped<ChangePasswordHandler>();
         services.AddScoped<GeoLoggingAppService>();
+        services.AddScoped<AdminAppService>();
         return services;
     }
 }

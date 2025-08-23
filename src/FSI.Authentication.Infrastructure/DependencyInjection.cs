@@ -9,6 +9,7 @@ using FSI.Authentication.Infrastructure.Security;
 using AppRepos = FSI.Authentication.Application.Interfaces.Repositories;
 using AppServ = FSI.Authentication.Application.Interfaces.Services;
 using AppMess = FSI.Authentication.Application.Interfaces.Messaging;
+using FSI.Authentication.Application.Interfaces.Repositories;
 
 namespace FSI.Authentication.Infrastructure
 {
@@ -22,7 +23,9 @@ namespace FSI.Authentication.Infrastructure
             services.AddScoped<DbSession>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<AppRepos.IGeoLogRepository, GeoLogRepository>();
+
             // Repositórios/Serviços
+            services.AddScoped<IAdminRepository, AdminRepository>();
             services.AddScoped<AppRepos.IUserAccountRepository, UserAccountRepository>();
 
             return services;
