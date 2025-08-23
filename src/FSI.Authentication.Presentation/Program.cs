@@ -2,7 +2,6 @@ using FSI.Authentication.Presentation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Hosting.WindowsServices; // <- pacote acima
 using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
